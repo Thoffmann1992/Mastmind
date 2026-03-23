@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReMasterify Pro - Online AI Mastering</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --success: #27ae60;
+            --bg: #f4f7fa;
+            --card: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 520px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        p.subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        label {
+            text-align: left;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input[type="file"],
+        input[type="number"],
+        select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: var(--primary-dark);
+        }
+        #status {
+            margin: 25px 0;
+            font-weight: bold;
+            min-height: 24px;
+        }
+        #download-btn {
+            display: none;
+            background: var(--success);
+            margin-top: 15px;
+        }
+        #download-btn:hover {
+            background: #219653;
+        }
+        footer {
+            margin-top: 50px;
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 ReMasterify Pro</h1>
+        <p class="subtitle">Audio faylını AI ilə remaster et – pulsuz və onlayn!</p>
+
+        <form id="remasterForm">
+            <label for="file">Audio faylı seçin (mp3, wav, flac):</label>
+            <input type="file" id="file" accept="audio/*" required>
+
+            <label for="model">AI Model:</label>
+            <select id="model">
+                <option value="high">High Energy (güclü, dinamik)</option>
+                <option value="low">Low Energy (yumşaq, təmiz)</option>
+            </select>
+
+            <label for="lufs">Target LUFS (Spotify üçün -14 tövsiyə olunur):</label>
+            <input type="number" id="lufs" value="-14.0" step="0.5" min="-20" max="-8">
+
+            <label for="width">Stereo Width (1.0 = normal, 1.5 = geniş):</label>
+            <input type="number" id="width" value="1.2" step="0.1" min="0.5" max="2.0">
+
+            <label for="noise">Noise Reduction (0 = yox, 1 = maks):</label>
+            <input type="number" id="noise" value="0.4" step="0.1" min="0" max="1">
+
+            <button type="submit">Remaster Et 🚀</button>
+        </form>
+
+        <div id="status"></div>
+        <button id="download-btn">Remaster edilmiş faylı endir 🎧</button>
+
+        <footer>Powered by AI • Netlify + Render</footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('remasterForm');
+        const status = document.getElementById('status');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let backendUrl = 'https://your-remasterify-backend.onrender.com/remaster';  // ← BURANI ÖZ BACKEND URL-İN İLƏ ƏVƏZ ET!
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            status.textContent = 'Fayl yüklənir və emal olunur... (30 saniyə – 2 dəqiqə)';
+            status.style.color = '#3498db';
+            downloadBtn.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file').files[0]);
+            formData.append('model', document.getElementById('model').value);
+            formData.append('lufs', document.getElementById('lufs').value);
+            formData.append('width', document.getElementById('width').value);
+            formData.append('noise', document.getElementById('noise').value);
+
+            try {
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server xətası: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                downloadBtn.href = url;  // əgər <a> tag istifadə etsəydik, amma button olaraq saxlayırıq
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'remastered_audio.wav';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+                downloadBtn.style.display = 'block';
+                downloadBtn.textContent = 'Remaster edilmiş faylı endir 🎧';
+
+                status.textContent = 'Hazır! Aşağıdakı düymədən endirin.';
+                status.style.color = '#27ae60';
+            } catch (err) {
+                status.textContent = 'Xəta: ' + err.message;
+                status.style.color = '#e74c3c';
+            }
+        });
+    </script>
+</body>
+</html>

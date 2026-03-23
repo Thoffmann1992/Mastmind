@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MasterMind">
+<meta name="theme-color" content="#080810">
+<meta name="description" content="AI ilə professional audio mastering">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>MasterMind Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080810;--s1:#0d0d1a;--s2:#111120;
+  --border:#1c1c30;--border2:#24243a;
+  --acc:#e2ff4e;--acc2:#ff4d6d;--acc3:#00d4ff;--acc4:#ff9500;
+  --text:#ededf8;--dim:#52526e;--dim2:#2e2e48;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;min-height:100dvh;overflow-x:hidden;padding-bottom:calc(72px + var(--safe-bot))}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.45}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.topbar{position:sticky;top:0;z-index:100;background:rgba(8,8,16,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:calc(var(--safe-top) + 12px) 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.logo em{color:var(--acc);font-style:normal}
+.api-status{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:1px;color:var(--dim)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--dim2)}
+.status-dot.online{background:var(--acc);animation:blink 2s infinite}
+.status-dot.error{background:var(--acc2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(8,8,16,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bot)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 8px;background:none;border:none;cursor:pointer;color:var(--dim);font-family:'DM Mono',monospace;transition:color 0.2s}
+.nav-btn.active{color:var(--acc)}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:9px;letter-spacing:1px;text-transform:uppercase}
+
+.page{display:none;padding:24px 16px;animation:pi 0.3s ease}
+.page.active{display:block}
+@keyframes pi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.section-label{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;display:block}
+.page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.page-sub{font-size:11px;color:var(--dim);line-height:1.6;margin-bottom:24px}
+
+.drop-zone{border:1px dashed var(--border2);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;position:relative;transition:all 0.25s;background:radial-gradient(ellipse at center,rgba(226,255,78,0.03) 0%,transparent 70%);margin-bottom:20px}
+.drop-zone:active,.drop-zone.over{border-color:var(--acc);background:radial-gradient(ellipse at center,rgba(226,255,78,0.07) 0%,transparent 70%)}
+.drop-zone input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.dz-ring{width:52px;height:52px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px;transition:all 0.2s;color:var(--dim)}
+.drop-zone:active .dz-ring{border-color:var(--acc);color:var(--acc)}
+.dz-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+.dz-sub{font-size:10px;color:var(--dim)}
+
+.file-chip{display:none;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;margin-bottom:16px}
+.file-chip.show{display:flex}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:blink 2s infinite;flex-shrink:0}
+.chip-name{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-sz{font-size:10px;color:var(--dim);flex-shrink:0}
+.chip-x{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;flex-shrink:0;padding:0 2px}
+
+.btn{width:100%;padding:15px;background:var(--acc);color:#080810;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;-webkit-appearance:none}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{background:var(--dim2);color:var(--dim);cursor:not-allowed;transform:none}
+.btn-outline{width:100%;padding:13px;background:transparent;color:var(--dim);border:1px solid var(--border2);border-radius:10px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;margin-top:10px}
+
+.loader{display:none;text-align:center;padding:36px 20px;background:var(--s1);border:1px solid var(--border);border-radius:12px;margin-top:20px}
+.loader.show{display:block}
+.bars{display:flex;gap:4px;justify-content:center;margin-bottom:18px}
+.bar{width:3px;height:28px;background:var(--acc);border-radius:2px;animation:wav 1s ease-in-out infinite}
+.bar:nth-child(2){animation-delay:.1s}.bar:nth-child(3){animation-delay:.2s}.bar:nth-child(4){animation-delay:.3s}.bar:nth-child(5){animation-delay:.4s}.bar:nth-child(6){animation-delay:.3s}.bar:nth-child(7){animation-delay:.15s}.bar:nth-child(8){animation-delay:.05s}
+@keyframes wav{0%,100%{transform:scaleY(0.3);opacity:0.3}50%{transform:scaleY(1);opacity:1}}
+.loader-label{font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+.loader-step{font-size:10px;color:var(--dim2);margin-top:6px;animation:fi 0.4s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.progress-track{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:14px}
+.progress-fill{height:100%;background:var(--acc);border-radius:2px;width:0;transition:width 0.4s ease}
+.progress-label{font-size:9px;color:var(--dim);margin-top:5px;letter-spacing:1px}
+
+.error-box{display:none;background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.25);border-radius:8px;padding:14px 16px;font-size:11px;color:var(--acc2);margin-top:14px;line-height:1.6}
+.error-box.show{display:block}
+
+/* profiles */
+.profiles{display:flex;flex-direction:column;gap:11px;margin-bottom:22px}
+.profile-card{border:1px solid var(--border2);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;background:var(--s1);display:flex;align-items:center;gap:13px}
+.profile-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.3s;border-radius:12px}
+.profile-card[data-p="streaming"]::before{background:radial-gradient(ellipse at left,rgba(226,255,78,0.1),transparent 60%)}
+.profile-card[data-p="club"]::before{background:radial-gradient(ellipse at left,rgba(255,77,109,0.1),transparent 60%)}
+.profile-card[data-p="warm"]::before{background:radial-gradient(ellipse at left,rgba(255,149,0,0.1),transparent 60%)}
+.profile-card[data-p="cinematic"]::before{background:radial-gradient(ellipse at left,rgba(0,212,255,0.1),transparent 60%)}
+.profile-card:active::before,.profile-card.sel::before{opacity:1}
+.profile-card.sel[data-p="streaming"]{border-color:var(--acc)}
+.profile-card.sel[data-p="club"]{border-color:var(--acc2)}
+.profile-card.sel[data-p="warm"]{border-color:var(--acc4)}
+.profile-card.sel[data-p="cinematic"]{border-color:var(--acc3)}
+.p-icon{width:42px;height:42px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px}
+.profile-card[data-p="streaming"] .p-icon{background:rgba(226,255,78,0.12);color:var(--acc)}
+.profile-card[data-p="club"] .p-icon{background:rgba(255,77,109,0.12);color:var(--acc2)}
+.profile-card[data-p="warm"] .p-icon{background:rgba(255,149,0,0.12);color:var(--acc4)}
+.profile-card[data-p="cinematic"] .p-icon{background:rgba(0,212,255,0.12);color:var(--acc3)}
+.p-body{flex:1;min-width:0}
+.p-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:2px}
+.p-desc{font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:7px}
+.p-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ptag{font-size:8px;padding:2px 6px;border-radius:3px;border:1px solid;letter-spacing:0.3px}
+.profile-card[data-p="streaming"] .ptag{border-color:rgba(226,255,78,0.3);color:var(--acc)}
+.profile-card[data-p="club"] .ptag{border-color:rgba(255,77,109,0.3);color:var(--acc2)}
+.profile-card[data-p="warm"] .ptag{border-color:rgba(255,149,0,0.3);color:var(--acc4)}
+.profile-card[data-p="cinematic"] .ptag{border-color:rgba(0,212,255,0.3);color:var(--acc3)}
+.p-check{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:opacity 0.2s}
+.profile-card[data-p="streaming"] .p-check{background:var(--acc);color:#080810}
+.profile-card[data-p="club"] .p-check{background:var(--acc2);color:#fff}
+.profile-card[data-p="warm"] .p-check{background:var(--acc4);color:#080810}
+.profile-card[data-p="cinematic"] .p-check{background:var(--acc3);color:#080810}
+.profile-card.sel .p-check{opacity:1}
+
+/* slider */
+.slider-wrap{margin-bottom:20px}
+.slider-row{display:flex;align-items:center;gap:12px;margin-top:8px}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--border2);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--acc);cursor:pointer}
+.slider-val{font-size:11px;color:var(--acc);min-width:24px;text-align:right}
+
+/* config */
+.config-card{background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:20px}
+.config-title{font-size:9px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.api-input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s}
+.api-input:focus{border-color:var(--acc)}
+.api-hint{font-size:9px;color:var(--dim);margin-top:6px;line-height:1.5}
+
+/* master result */
+.master-result{display:none;margin-top:20px;animation:pi 0.4s ease}
+.master-result.show{display:block}
+.mr-banner{border-radius:12px;padding:18px;margin-bottom:14px;display:flex;align-items:center;gap:13px}
+.mr-banner[data-p="streaming"]{background:linear-gradient(135deg,rgba(226,255,78,0.12),rgba(226,255,78,0.04));border:1px solid rgba(226,255,78,0.2)}
+.mr-banner[data-p="club"]{background:linear-gradient(135deg,rgba(255,77,109,0.12),rgba(255,77,109,0.04));border:1px solid rgba(255,77,109,0.2)}
+.mr-banner[data-p="warm"]{background:linear-gradient(135deg,rgba(255,149,0,0.12),rgba(255,149,0,0.04));border:1px solid rgba(255,149,0,0.2)}
+.mr-banner[data-p="cinematic"]{background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,255,0.04));border:1px solid rgba(0,212,255,0.2)}
+.mr-icon{font-size:26px;flex-shrink:0}
+.mr-info{flex:1}
+.mr-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:2px}
+.mr-sub{font-size:10px;color:var(--dim)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.info-card{background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:12px}
+.info-label{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.info-val{font-family:'Syne',sans-serif;font-size:15px;font-weight:700}
+.download-btn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.download-btn[data-p="streaming"]{background:var(--acc);color:#080810}
+.download-btn[data-p="club"]{background:var(--acc2);color:#fff}
+.download-btn[data-p="warm"]{background:var(--acc4);color:#080810}
+.download-btn[data-p="cinematic"]{background:var(--acc3);color:#080810}
+.download-btn:active{transform:scale(0.98)}
+
+/* install page */
+.install-hero{text-align:center;padding:16px 0 28px}
+.install-app-icon{width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg,var(--acc),#a8c000);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px;box-shadow:0 12px 32px rgba(226,255,78,0.2)}
+.install-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px}
+.install-sub{font-size:11px;color:var(--dim);line-height:1.6;max-width:260px;margin:0 auto}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+.feature-item{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:13px 11px;text-align:center}
+.feat-icon{font-size:20px;margin-bottom:7px}
+.feat-name{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;margin-bottom:2px}
+.feat-desc{font-size:9px;color:var(--dim);line-height:1.4}
+.install-steps-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.install-step{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.install-step:last-child{border-bottom:none}
+.ist-num{width:26px;height:26px;border-radius:7px;background:rgba(226,255,78,0.1);color:var(--acc);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex-shrink:0}
+.ist-body{flex:1}
+.ist-title{font-size:12px;font-weight:500;margin-bottom:2px}
+.ist-desc{font-size:10px;color:var(--dim);line-height:1.5}
+.ist-code{display:inline-block;background:var(--border2);border-radius:3px;padding:1px 6px;font-size:10px;color:var(--acc);margin-top:2px}
+.railway-card{background:linear-gradient(135deg,rgba(226,255,78,0.06),rgba(226,255,78,0.02));border:1px solid rgba(226,255,78,0.2);border-radius:12px;padding:16px;margin-bottom:14px}
+.railway-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:10px;color:var(--acc)}
+.railway-steps{font-size:11px;color:var(--text);line-height:2.1}
+.railway-steps code{color:var(--acc);background:rgba(226,255,78,0.08);padding:1px 5px;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Master<em>Mind</em></div>
+  <div class="api-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusLabel">yoxlanılır</span>
+  </div>
+</div>
+
+<!-- PAGE: MASTERİNG -->
+<div id="page-master" class="page active">
+  <div class="page-title">Mastering</div>
+  <p class="page-sub">Profil seç → fayl yüklə → real backend ilə master et</p>
+
+  <div class="config-card">
+    <div class="config-title">Backend URL</div>
+    <input class="api-input" id="apiUrl" type="url" placeholder="https://your-app.railway.app">
+    <div class="api-hint">Railway deploy etdikdən sonra aldığın URL-i bura yaz. Avtomatik saxlanır.</div>
+  </div>
+
+  <div class="profiles">
+    <div class="profile-card" data-p="streaming" onclick="selectProfile(this)">
+      <div class="p-icon">📡</div>
+      <div class="p-body">
+        <div class="p-name">Streaming</div>
+        <div class="p-desc">Spotify, Apple Music, YouTube. Natural EQ, geniş dinamika.</div>
+        <div class="p-tags"><span class="ptag">−14 LUFS</span><span class="ptag">Natural EQ</span><span class="ptag">True Peak −1dB</span></div>
+      </div>
+      <div class="p-check">✓</div>
+    </div>
+    <div class="profile-card" data-p="club" onclick="selectProfile(this)">
+      <div class="p-icon">🔊</div>
+      <div class="p-body">
+        <div class="p-name">Club / Loud</div>
+        <div class="p-desc">Klüb sistemi, maksimum enerji. Güclü bas, punch kompressor.</div>
+        <div class="p-tags"><span class="ptag">−8 LUFS</span><span class="ptag">Bass Boost</span><span class="ptag">Punch Comp</span></div>
+      </div>
+      <div class="p-check">✓</div>
+    </div>
+    <div class="profile-card" data-p="warm" onclick="selectProfile(this)">
+      <div class="p-icon">🎛️</div>
+      <div class="p-body">
+        <div class="p-name">Warm / Vintage</div>
+        <div class="p-desc">Analog istilik, tape saturation, vinyl karakter.</div>
+        <div class="p-tags"><span class="ptag">−12 LUFS</span><span class="ptag">Tape Sat</span><span class="ptag">Vintage EQ</span></div>
+      </div>
+      <div class="p-check">✓</div>
+    </div>
+    <div class="profile-card" data-p="cinematic" onclick="selectProfile(this)">
+      <div class="p-icon">🎬</div>
+      <div class="p-body">
+        <div class="p-name">Cinematic</div>
+        <div class="p-desc">Film, oyun, trailer. Geniş stereo, sub-bass, dramatik dinamika.</div>
+        <div class="p-tags"><span class="ptag">−16 LUFS</span><span class="ptag">Wide Stereo</span><span class="ptag">Sub Ext</span></div>
+      </div>
+      <div class="p-check">✓</div>
+    </div>
+  </div>
+
+  <div id="dz-m" class="drop-zone">
+    <input type="file" id="file-m" accept="audio/*">
+    <div class="dz-ring">🎵</div>
+    <div class="dz-title">Audio faylı seç</div>
+    <div class="dz-sub">MP3 · WAV · FLAC · AIFF · OGG</div>
+  </div>
+
+  <div id="chip-m" class="file-chip">
+    <div class="chip-dot"></div>
+    <span class="chip-name" id="chip-m-name">—</span>
+    <span class="chip-sz" id="chip-m-sz">—</span>
+    <button class="chip-x" onclick="clearFile()">×</button>
+  </div>
+
+  <div class="slider-wrap">
+    <span class="section-label">Noise Reduction</span>
+    <div class="slider-row">
+      <input type="range" id="noiseSlider" min="0" max="10" value="0" oninput="document.getElementById('noiseVal').textContent=this.value;noiseAmount=this.value/10">
+      <span class="slider-val" id="noiseVal">0</span>
+    </div>
+  </div>
+
+  <button class="btn" id="btn-m" onclick="runMastering()" disabled>MASTERİNG ET</button>
+  <div id="err-m" class="error-box"></div>
+
+  <div id="load-m" class="loader">
+    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+    <div class="loader-label">Master edilir</div>
+    <div class="loader-step" id="step-m">Backend-ə göndərilir...</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">0%</div>
+  </div>
+
+  <div id="mres" class="master-result"></div>
+</div>
+
+<!-- PAGE: QURAŞDIR -->
+<div id="page-install" class="page">
+  <div class="install-hero">
+    <div class="install-app-icon">🎛️</div>
+    <div class="install-title">Deploy & Quraşdır</div>
+    <p class="install-sub">Backend-i Railway-ə deploy et, PWA-nı telefona əlavə et</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-item"><div class="feat-icon">⚡</div><div class="feat-name">Real DSP</div><div class="feat-desc">librosa ilə həqiqi audio emal</div></div>
+    <div class="feature-item"><div class="feat-icon">📴</div><div class="feat-name">PWA</div><div class="feat-desc">Ana ekrana əlavə et</div></div>
+    <div class="feature-item"><div class="feat-icon">🎛️</div><div class="feat-name">4 Profil</div><div class="feat-desc">Streaming·Club·Warm·Cinema</div></div>
+    <div class="feature-item"><div class="feat-icon">🆓</div><div class="feat-name">Pulsuz</div><div class="feat-desc">Railway free tier</div></div>
+  </div>
+
+  <div class="railway-card">
+    <div class="railway-title">🚂 Railway Deploy (5 dəqiqə)</div>
+    <div class="railway-steps">
+      1. <a href="https://github.com/new" target="_blank" style="color:var(--acc)">GitHub</a>-da yeni repo aç<br>
+      2. <code>main.py</code> <code>requirements.txt</code> <code>Procfile</code> <code>railway.json</code> yüklə<br>
+      3. <a href="https://railway.app" target="_blank" style="color:var(--acc)">railway.app</a> → New Project → GitHub repo seç<br>
+      4. Deploy → URL alırsın: <code>https://xxx.railway.app</code><br>
+      5. Həmin URL-i "Mastering" tabında yaz ✓
+    </div>
+  </div>
+
+  <div class="install-steps-card">
+    <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:14px;color:var(--acc)">📱 iPhone (Safari)</div>
+    <div class="install-step"><div class="ist-num">1</div><div class="ist-body"><div class="ist-title">Saytı Safaridə aç</div><div class="ist-desc">Chrome işləmir — mütləq Safari</div></div></div>
+    <div class="install-step"><div class="ist-num">2</div><div class="ist-body"><div class="ist-title">⬆ Paylaş → "Ana Ekrana Əlavə Et"</div><div class="ist-desc">Aşağı paneldəki paylaş ikonuna bas</div></div></div>
+    <div class="install-step"><div class="ist-num">3</div><div class="ist-body"><div class="ist-title">Əlavə Et → ✓ Hazır</div><div class="ist-desc">İkon ana ekranda görünür</div></div></div>
+  </div>
+
+  <div class="install-steps-card">
+    <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:14px;color:var(--acc3)">🤖 Android (Chrome)</div>
+    <div class="install-step"><div class="ist-num">1</div><div class="ist-body"><div class="ist-title">Chrome ilə saytı aç</div><div class="ist-desc">Google Chrome brauzeri</div></div></div>
+    <div class="install-step"><div class="ist-num">2</div><div class="ist-body"><div class="ist-title">⋮ → "Ana Ekrana əlavə et"</div><div class="ist-desc">Sağ üstdəki 3 nöqtə menyusu</div></div></div>
+    <div class="install-step"><div class="ist-num">3</div><div class="ist-body"><div class="ist-title">Quraşdır → ✓</div><div class="ist-desc">İkon dərhal görünür</div></div></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="goPage('master',this)"><span class="nav-icon">🎛️</span><span class="nav-label">Mastering</span></button>
+  <button class="nav-btn" onclick="goPage('install',this)"><span class="nav-icon">📲</span><span class="nav-label">Quraşdır</span></button>
+</nav>
+
+<script>
+// Config
+const API_KEY = 'mm_api_url';
+let apiUrl = localStorage.getItem(API_KEY) || '';
+let selectedFile = null;
+let selectedProfile = null;
+let noiseAmount = 0;
+
+const apiInput = document.getElementById('apiUrl');
+apiInput.value = apiUrl;
+apiInput.addEventListener('input', () => {
+  apiUrl = apiInput.value.trim().replace(/\/$/, '');
+  localStorage.setItem(API_KEY, apiUrl);
+  checkHealth();
+});
+
+// Health
+async function checkHealth() {
+  const dot = document.getElementById('statusDot');
+  const lbl = document.getElementById('statusLabel');
+  if (!apiUrl) { dot.className='status-dot'; lbl.textContent='URL yoxdur'; return; }
+  try {
+    const r = await fetch(apiUrl + '/health', { signal: AbortSignal.timeout(5000) });
+    if (r.ok) { dot.className='status-dot online'; lbl.textContent='online'; }
+    else throw new Error();
+  } catch { dot.className='status-dot error'; lbl.textContent='offline'; }
+}
+checkHealth();
+setInterval(checkHealth, 30000);
+
+// Nav
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// File
+const dz = document.getElementById('dz-m');
+const inp = document.getElementById('file-m');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+inp.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(f) {
+  selectedFile = f;
+  document.getElementById('chip-m-name').textContent = f.name;
+  document.getElementById('chip-m-sz').textContent = fmtSz(f.size);
+  document.getElementById('chip-m').classList.add('show');
+  updateBtn();
+}
+function clearFile() {
+  selectedFile = null; inp.value = '';
+  document.getElementById('chip-m').classList.remove('show');
+  updateBtn();
+}
+function fmtSz(b) { return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+
+// Profile
+function selectProfile(el) {
+  document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedProfile = el.dataset.p;
+  updateBtn();
+}
+function updateBtn() {
+  document.getElementById('btn-m').disabled = !(selectedProfile && selectedFile);
+}
+
+// Steps
+const steps = ['Backend-ə göndərilir...','Audio analiz edilir...','EQ tətbiq edilir...','Kompressor işləyir...','LUFS normalize olunur...','Fayl hazırlanır...'];
+const profileMeta = {
+  streaming:{icon:'📡',name:'Streaming Master',lufs:'−14 LUFS',color:'var(--acc)'},
+  club:{icon:'🔊',name:'Club / Loud Master',lufs:'−8 LUFS',color:'var(--acc2)'},
+  warm:{icon:'🎛️',name:'Warm / Vintage Master',lufs:'−12 LUFS',color:'var(--acc4)'},
+  cinematic:{icon:'🎬',name:'Cinematic Master',lufs:'−16 LUFS',color:'var(--acc3)'},
+};
+
+async function runMastering() {
+  if (!selectedProfile || !selectedFile) return;
+  if (!apiUrl) { showErr('Backend URL yazılmayıb. "Quraşdır" tabına bax.'); return; }
+
+  document.getElementById('btn-m').disabled = true;
+  document.getElementById('err-m').classList.remove('show');
+  document.getElementById('mres').classList.remove('show');
+  document.getElementById('mres').innerHTML = '';
+
+  const load = document.getElementById('load-m');
+  load.classList.add('show');
+
+  let si = 0;
+  const stepEl = document.getElementById('step-m');
+  const fillEl = document.getElementById('progress-fill');
+  const lblEl = document.getElementById('progress-label');
+
+  const iv = setInterval(() => {
+    if (si < steps.length-1) {
+      si++;
+      stepEl.textContent = steps[si];
+      const pct = Math.round(si/(steps.length-1)*80);
+      fillEl.style.width = pct+'%';
+      lblEl.textContent = pct+'%';
+    }
+  }, 1100);
+
+  try {
+    const form = new FormData();
+    form.append('file', selectedFile);
+    form.append('profile', selectedProfile);
+    form.append('noise_reduction', noiseAmount.toString());
+
+    const t0 = Date.now();
+    const resp = await fetch(apiUrl+'/master', { method:'POST', body:form });
+
+    if (!resp.ok) {
+      const e = await resp.json().catch(()=>({detail:'Naməlum xəta'}));
+      throw new Error(e.detail||'HTTP '+resp.status);
+    }
+
+    const blob = await resp.blob();
+    const elapsed = ((Date.now()-t0)/1000).toFixed(1);
+
+    clearInterval(iv);
+    fillEl.style.width = '100%';
+    lblEl.textContent = '100% — Hazır!';
+
+    const url = URL.createObjectURL(blob);
+    const stem = selectedFile.name.includes('.') ? selectedFile.name.substring(0,selectedFile.name.lastIndexOf('.')) : selectedFile.name;
+    const dlName = stem+'_'+selectedProfile+'_master.wav';
+
+    load.classList.remove('show');
+    renderResult(url, dlName, elapsed);
+  } catch(e) {
+    clearInterval(iv);
+    load.classList.remove('show');
+    showErr('Xəta: '+e.message);
+    document.getElementById('btn-m').disabled = false;
+  }
+}
+
+function renderResult(blobUrl, dlName, elapsed) {
+  const meta = profileMeta[selectedProfile];
+  const el = document.getElementById('mres');
+  el.innerHTML = `
+    <div class="mr-banner" data-p="${selectedProfile}">
+      <span class="mr-icon">${meta.icon}</span>
+      <div class="mr-info">
+        <div class="mr-title">${meta.name}</div>
+        <div class="mr-sub">${meta.lufs} · 24-bit WAV · ${elapsed}s</div>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-label">Profil</div><div class="info-val" style="color:${meta.color}">${selectedProfile.toUpperCase()}</div></div>
+      <div class="info-card"><div class="info-label">Format</div><div class="info-val">24-bit WAV</div></div>
+      <div class="info-card"><div class="info-label">Hədəf</div><div class="info-val" style="color:${meta.color}">${meta.lufs}</div></div>
+      <div class="info-card"><div class="info-label">Müddət</div><div class="info-val">${elapsed}s</div></div>
+    </div>
+    <a class="download-btn" data-p="${selectedProfile}" href="${blobUrl}" download="${dlName}">⬇ Master Faylı Endir</a>
+    <button class="btn-outline" onclick="resetMaster()">YENİ MASTERİNG</button>`;
+  el.classList.add('show');
+}
+
+function resetMaster() {
+  clearFile();
+  document.getElementById('mres').classList.remove('show');
+  document.getElementById('mres').innerHTML = '';
+  document.getElementById('err-m').classList.remove('show');
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-m');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
